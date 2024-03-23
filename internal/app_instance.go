@@ -3,6 +3,9 @@ package internal
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os/exec"
 	"time"
 )
@@ -31,11 +34,12 @@ type AppInstance struct {
 }
 
 func (app *AppInstance) RecordEvent(eventType AppInstanceState) {
+	app.State = eventType
 	var event = AppInstanceEvent{
 		eventType: eventType,
 		timestamp: time.Now(),
 	}
-	slog.Info(fmt.Sprintf("Event: %v at %v", eventType, event.timestamp))
+	slog.Info(fmt.Sprintf("Event: %v at %v", app.State, event.timestamp))
 }
 
 func (app *AppInstance) Start() error {
@@ -72,9 +76,18 @@ func (app *AppInstance) Start() error {
 				app.Channel <- err
 			}
 		}
+		app.RecordEvent(Stopped)
+		appStdWriter.Info("Server stopped")
+		app.Channel <- nil
 	}()
 
 	return nil
+}
+
+func (app *AppInstance) HandleConnection(w http.ResponseWriter, r *http.Request) {
+	targetUrl, _ := url.Parse("http://localhost:" + app.Port)
+	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
+	proxy.ServeHTTP(w, r)
 }
 
 type AppStdoutWriter struct {

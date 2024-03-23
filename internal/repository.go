@@ -76,7 +76,7 @@ func (repo *Repository) CloneOrPullVersion(version string) error {
 		cmd.Dir = destDir
 		err := cmd.Run()
 		if err != nil {
-			return err
+			slog.Warn("Failed to pull repository. Using the existing repository")
 		}
 	}
 	return nil
@@ -89,8 +89,7 @@ func (repo *Repository) RefreshTags() error {
 	cmd.Dir = destDir
 	err := cmd.Run()
 	if err != nil {
-		slog.Error("Error fetching tags: %v\n", err)
-		return err
+		slog.Warn(fmt.Sprintf("Failed to fetch tags. Continue using the existing list of tags: %v\n", err))
 	}
 
 	cmd = exec.Command("git", "tag", "--list")

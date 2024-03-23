@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"net"
+	"net/http"
 )
 
 type Server struct {
 	repo *Repository
 	conf *Config
-	apps []AppInstance
+	apps []*AppInstance
 }
 
 func (svr *Server) Init(cfg *Config, repo *Repository) {
@@ -26,7 +26,7 @@ func (svr *Server) OnVersionUpdate(repo *Repository, event *VersionUpdateEvent) 
 	if err != nil {
 		return err
 	}
-	svr.apps = append(svr.apps, *app)
+	svr.apps = append(svr.apps, app)
 	return nil
 }
 
@@ -58,30 +58,24 @@ func (svr *Server) Start() error {
 		return err
 	}
 
-	var port = svr.conf.Port
+	http.HandleFunc("/", svr.HandleRequest)
+
 	// Start the server
-	listener, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		panic(err)
+	fmt.Printf("Server listening on port %v\n", svr.conf.Port)
+	if err := http.ListenAndServe(":"+svr.conf.Port, nil); err != nil {
+		log.Fatalf("Error accepting connection: %v", err)
+		return err
 	}
-	defer listener.Close()
-
-	fmt.Printf("Server listening on port %v\n", port)
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Fatalf("Error accepting connection: %v", err)
-		}
-		go svr.HandleConnection(conn)
-	}
+	return nil
 }
 
-func (svr *Server) HandleConnection(conn net.Conn) {
-	fmt.Printf("Received connection from %v\n", conn.RemoteAddr())
-	err := conn.Close()
-	if err != nil {
-		log.Fatalf("Error closing connection: %v", err)
-		return
+func (svr *Server) HandleRequest(w http.ResponseWriter, r *http.Request) {
+	// Proxy the request to the app instance
+	for _, app := range svr.apps {
+		if app.State == Running {
+			app.HandleConnection(w, r)
+			return
+		}
 	}
+	slog.Error("No running applications found!")
 }
