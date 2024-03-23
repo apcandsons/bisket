@@ -1,0 +1,7 @@
+## generated output ##
+dist
+.bisqit
+bisqit.yaml
+
+## IDE ##
+.idea/
