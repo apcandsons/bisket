@@ -1,4 +1,5 @@
 port: "8080"
+admin_port: "18080"
 preview: false
 run:
 - echo @$(uname -m)

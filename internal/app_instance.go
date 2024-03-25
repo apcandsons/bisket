@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os/exec"
+	"syscall"
 	"time"
 )
 
@@ -31,6 +32,7 @@ type AppInstance struct {
 	Repo       *Repository
 	RunCommand []string
 	Channel    chan error
+	CurrCmd    *exec.Cmd
 }
 
 func (app *AppInstance) RecordEvent(eventType AppInstanceState) {
@@ -44,7 +46,7 @@ func (app *AppInstance) RecordEvent(eventType AppInstanceState) {
 
 func (app *AppInstance) Start() error {
 	app.Channel = make(chan error)
-	defer close(app.Channel)
+	// defer close(app.Channel)
 
 	var appStdWriter = AppStdoutWriter{Name: app.Name, Ver: app.Version}
 	var appErrWriter = AppStderrWriter{Name: app.Name, Ver: app.Version}
@@ -60,20 +62,21 @@ func (app *AppInstance) Start() error {
 	go func() {
 		app.RecordEvent(Running)
 		appStdWriter.Info(fmt.Sprintf("Running %v/%v on %v", app.Name, app.Version, app.Port))
-
 		appDir := fmt.Sprintf(".bisqit/%v/%v", app.Name, app.Version)
+
 		for _, line := range app.RunCommand {
 			appStdWriter.Debug(fmt.Sprintf("Running command: %v", line))
-
-			// cmd = exec.Command("sh", "-c", "ls -la")
 			cmd := exec.Command("sh", "-c", line)
 			cmd.Dir = appDir
 			cmd.Env = append(cmd.Env, fmt.Sprintf("BISQIT_PORT=%s", app.Port))
 			cmd.Stdout = &appStdWriter
 			cmd.Stderr = &appErrWriter
+
+			app.CurrCmd = cmd
 			if err := cmd.Run(); err != nil {
 				appErrWriter.Error(fmt.Sprintf("Error starting command: %v", err))
 				app.Channel <- err
+				return
 			}
 		}
 		app.RecordEvent(Stopped)
@@ -88,6 +91,14 @@ func (app *AppInstance) HandleConnection(w http.ResponseWriter, r *http.Request)
 	targetUrl, _ := url.Parse("http://localhost:" + app.Port)
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	proxy.ServeHTTP(w, r)
+}
+
+func (app *AppInstance) Stop() {
+	err := app.CurrCmd.Process.Signal(syscall.SIGINT)
+	if err != nil {
+		slog.Warn(fmt.Sprintf("Error stopping app: %v", err))
+	}
+	app.RecordEvent(Stopped)
 }
 
 type AppStdoutWriter struct {

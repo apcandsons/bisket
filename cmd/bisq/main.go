@@ -12,7 +12,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "bisq",
 	Short: "This is a CLI tool for bisqit, a light weight application switcher",
-	Long:  `A fast and flexisble application switcher build with love in Go. Complete documentation is available at https://github.com/apcandsons/bisqit`,
+	Long:  `A fast and flexible application switcher build with love in Go. Complete documentation is available at https://github.com/apcandsons/bisqit`,
 }
 
 var initCmd = &cobra.Command{

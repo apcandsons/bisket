@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Port       string      `yaml:"port"`
+	AdminPort  string      `yaml:"admin_port"`
 	Preview    bool        `yaml:"preview"`
 	RunCommand []string    `yaml:"run"`
 	RepoConfig *RepoConfig `yaml:"repository"`
@@ -24,7 +25,8 @@ type GithubConfig struct {
 }
 
 func (cfg *Config) Init() {
-	cfg.Port = "8081"
+	cfg.Port = "8080"
+	cfg.AdminPort = "18080"
 	cfg.Preview = false
 	cfg.RunCommand = []string{"go run dist/@$(uname -m)/server -p $BISQIT_PORT"}
 	cfg.RepoConfig = &RepoConfig{

@@ -30,6 +30,7 @@ type VersionDestroyEvent struct {
 func (repo *Repository) OnVersionUpdate(fn func(*Repository, *VersionUpdateEvent) error) {
 	repo.VersionUpdateFn = fn
 }
+
 func (repo *Repository) OnVersionDestroy(fn func(*Repository, *VersionDestroyEvent) error) {
 	repo.VersionDestroyFn = fn
 }
@@ -39,7 +40,7 @@ func (repo *Repository) Init(config *RepoConfig) error {
 	repo.AppName = splitRepoUrl[len(splitRepoUrl)-1]
 	repo.RepoUrl = config.Github.RepoUrl
 	slog.Info("Initializing repository: " + repo.RepoUrl)
-	// repo.ApiKey = config.Github.ApiKey
+	// Repo.ApiKey = config.Github.ApiKey
 
 	err := repo.CloneOrPullVersion("main")
 	if err != nil {
@@ -85,7 +86,7 @@ func (repo *Repository) CloneOrPullVersion(version string) error {
 func (repo *Repository) RefreshTags() error {
 	slog.Info("Fetching tags")
 	destDir := fmt.Sprintf(".bisqit/%s/main", repo.AppName)
-	cmd := exec.Command("git", "fetch", "--tags")
+	cmd := exec.Command("git", "fetch", "--prune", "origin", "+refs/tags/*:refs/tags/*")
 	cmd.Dir = destDir
 	err := cmd.Run()
 	if err != nil {
