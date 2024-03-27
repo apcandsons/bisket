@@ -12,8 +12,8 @@ build:
 		alias=$$(echo $$platform | cut -d' ' -f1); \
 		os=$$(echo $$platform | cut -d' ' -f2); \
 		arch=$$(echo $$platform | cut -d' ' -f3); \
-		echo "Building $$alias for $$arch-$$os"; \
-		GOOS=$$os GOARCH=$$arch go build -o $(DIST_DIR)/@$$arch-$$os/$(BINARY_NAME) cmd/bisk/main.go; \
+		echo "Building $$alias for $$alias-$$os"; \
+		GOOS=$$os GOARCH=$$arch go build -o $(DIST_DIR)/@$$alias-$$os/$(BINARY_NAME) cmd/bisk/main.go; \
 	done
 
 clean:
