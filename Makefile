@@ -1,14 +1,20 @@
 BINARY_NAME=bisk
 DIST_DIR=./dist
-ARCH_TYPE := $(shell uname -m)
+ARCH_TYPE := $(shell echo "$$(uname -m)-$$(uname -s | awk '{print tolower($$0)}')")
+TARGET_PLATFORMS := "aarch64 linux arm64" "arm64 darwin arm64"
 
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.Build=$(BUILD)"
 
 all: test build
 
 build:
-	@echo "Building for $(ARCH_TYPE)"
-	@GO112MODULE=on go build -o $(DIST_DIR)/@$(ARCH_TYPE)/$(BINARY_NAME) ./cmd/bisk
+	@for platform in $(TARGET_PLATFORMS); do \
+		alias=$$(echo $$platform | cut -d' ' -f1); \
+		os=$$(echo $$platform | cut -d' ' -f2); \
+		arch=$$(echo $$platform | cut -d' ' -f3); \
+		echo "Building $$alias for $$os-$$arch"; \
+		GOOS=$$os GOARCH=$$arch go build -o $(DIST_DIR)/@$$arch-$$os/$(BINARY_NAME) cmd/bisk/main.go; \
+	done
 
 clean:
 	@echo "Cleaning"
@@ -20,7 +26,7 @@ init:
 
 run: build
 	@echo "Running application..."
-	@./$(DIST_DIR)/@$(ARCH_TYPE)/$(BINARY_NAME) server start
+	@$(DIST_DIR)/@$(ARCH_TYPE)/$(BINARY_NAME) server start
 
 help:
 	@echo "Available commands:"
