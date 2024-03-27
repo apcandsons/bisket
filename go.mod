@@ -1,4 +1,4 @@
-module apcandsons.com/bisqit
+module apcandsons.com/bisket
 
 go 1.21.4
 

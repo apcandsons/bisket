@@ -28,7 +28,7 @@ func (cfg *Config) Init() {
 	cfg.Port = "8080"
 	cfg.AdminPort = "18080"
 	cfg.Preview = false
-	cfg.RunCommand = []string{"go run dist/@$(uname -m)/server -p $BISQIT_PORT"}
+	cfg.RunCommand = []string{"go run dist/@$(uname -m)/server -p $BISKET_PORT"}
 	cfg.RepoConfig = &RepoConfig{
 		Github: GithubConfig{
 			RepoUrl: "https://github.com/apcandsons/echo-app",

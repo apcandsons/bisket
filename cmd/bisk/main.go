@@ -5,40 +5,40 @@ import (
 	"log"
 	"os"
 
-	intl "apcandsons.com/bisqit/internal"
+	intl "apcandsons.com/bisket/internal"
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "bisq",
-	Short: "This is a CLI tool for bisqit, a light weight application switcher",
-	Long:  `A fast and flexible application switcher build with love in Go. Complete documentation is available at https://github.com/apcandsons/bisqit`,
+	Use:   "bisk",
+	Short: "This is a CLI tool for bisket, a light weight application switcher",
+	Long:  `A fast and flexible application switcher build with love in Go. Complete documentation is available at https://github.com/apcandsons/bisket`,
 }
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initializes bisqit configuration",
-	Long:  "This command initializes the bisqit configuration file (bisqit.yaml)",
+	Short: "Initializes bisket configuration",
+	Long:  "This command initializes the bisket configuration file (bisket.yaml)",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Initializing bisqit")
+		fmt.Println("Initializing bisket")
 		var cfg = intl.Config{}
 		cfg.Init()
-		cfg.WriteToFile("bisqit.yaml")
+		cfg.WriteToFile("bisket.yaml")
 	},
 }
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
-	Short: "Manage bisqit server",
+	Short: "Manage bisket server",
 }
 
 var serverStartCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start the bisqit server",
-	Long:  `This command starts the bisqit server, making it ready to manage application version instances`,
+	Short: "Start the bisket server",
+	Long:  `This command starts the bisket server, making it ready to manage application version instances`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var cfg = intl.Config{}
-		err := cfg.ReadFromFile("bisqit.yaml")
+		err := cfg.ReadFromFile("bisket.yaml")
 		if err != nil {
 			log.Fatalf("Error reading config file: %v", err)
 		}

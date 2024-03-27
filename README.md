@@ -1,4 +1,4 @@
-# bisqit
+# bisket
 
 Tired of waiting for deployment? Let’s enjoy the ***blazing-fast deployment*** in a bitesize!!
 
@@ -8,28 +8,28 @@ Container technology is great, but the deploy experience is just horrible.
 
 Image creation is time-consuming, difficult to optimize, and lacks scalability. After it's available in the repository, it needs to be pulled, mounted, and then there's the additional overhead involved in running a new instance and updating traffic. This process consumes a significant amount of time for engineers daily. In my opinion, this technology is over-engineered, resulting in the wastage of substantial networking and computing resources every day.
 
-bisqit is a lightweight application switcher, designed to be used in a critical applications where turnover speed matters. It provides a seamless way to switch between different applications versions without consuming your time, enhancing productivity while ensuring a reliable and smooth deployment experience.
+bisket is a lightweight application switcher, designed to be used in a critical applications where turnover speed matters. It provides a seamless way to switch between different applications versions without consuming your time, enhancing productivity while ensuring a reliable and smooth deployment experience.
 
 ## tl;dr
 
-Install bisqit
+Install bisket
 
 ```bash
-$ brew install bisqit
+$ brew install bisket
 ```
 
-Initialize using `bisq init` command
+Initialize using `bisk init` command
 
 ```bash
-$ bisq init
+$ bisk init
 ```
 
-This will create `bisqit.yaml`, use your editor to modify however needed.
+This will create `bisket.yaml`, use your editor to modify however needed.
 
 ```yaml
-bisqit_server_port: 8001
+bisket_server_port: 8001
 run:
-  - dist/server -p $BISQIT_PORT
+  - dist/server -p $BISKET_PORT
 repository:
 	git:
 	  repository: https://github.com/smithee/amazing_app
@@ -37,15 +37,14 @@ repository:
 ```
 
 <aside>
-💡 Note that your application needs to either read the environment variable of `BISQIT_PORT` or be passed as an argument to change the port on which the application runs.
-
+💡 Note that your application needs to either read the environment variable of `BISKET_PORT` or be passed as an argument to change the port on which the application runs.
 </aside>
 
-You can actually run bisqit server on your local device to test. So, just do this:
+You can actually run bisket server on your local device to test. So, just do this:
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 Reading https://github.com/smithee/amazing_app
 Detected latest version: @1.0.0
 Pulling latest version: @1.0.0
@@ -70,11 +69,11 @@ $ git tag @1.0.1
 $ git git push origin @1.0.1
 ```
 
-Now see what happens on your bisq server:
+Now see what happens on your bisk server:
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 ...
 Routing tcp:8001 -> 18000
 Detected latest version: @1.0.1
@@ -87,8 +86,8 @@ Destroying previous version: @1.0.0 ... Done
 ```
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 ...
 Routing tcp:8001 -> 18000
 Detected latest version: @1.0.1
@@ -111,8 +110,8 @@ git push origin --delete @1.0.1
 ```
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 ...
 Routing tcp:8001 -> 18001
 Ready to destroy previous version: @1.0.0
@@ -129,18 +128,18 @@ Security is important!
 
 ## Preserve Version Instances
 
-By default, bisqit server auto destroys previous version to save resources on your computing environment. However, you can add `preserve_previous_generations` attribute so that it preserves past instances.
+By default, bisket server auto destroys previous version to save resources on your computing environment. However, you can add `preserve_previous_generations` attribute so that it preserves past instances.
 
 ```yaml
-bisqit_server_port: 8001
+bisket_server_port: 8001
 preserve_previous_generations: 2 # this would allow you to
 ```
 
 Let’s see what happens when you update from version `@1.0.0` to `1.0.1` .
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 ...
 Routing tcp:8001 -> 18000
 Detected latest version: @1.0.1
@@ -158,8 +157,8 @@ git push origin --delete @1.0.1
 ```
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 ...
 Detected latest version: @1.0.0
 Detected running instance of amazing_app@1.0.0 on 18000
@@ -172,12 +171,12 @@ You can observe that the rollback speed is blazing fast.
 
 ## The Preview Mode
 
-One of the advantages on using bisqit is that it provides a mechanism to run multiple instances of applications for testing purposes.  And way you control which application version to connect, is through providing a HTTP Headers (Defaults to `x-bisq-preview`)
+One of the advantages on using bisket is that it provides a mechanism to run multiple instances of applications for testing purposes.  And way you control which application version to connect, is through providing a HTTP Headers (Defaults to `x-bisk-preview`)
 
-To enable preview mode, set `preview_mode: true` in your `bisqit.yaml`
+To enable preview mode, set `preview_mode: true` in your `bisket.yaml`
 
 ```bash
-bisqit_server_port: 8001
+bisket_server_port: 8001
 preview_mode: true
 ```
 
@@ -192,14 +191,14 @@ $ git git push origin @preview/1.0.1
 ```
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 Preview mode: on
 ...
 Routing tcp:8001 -> 18000
 Detected preview version: @preview/1.0.1
 Running instance of amazing_app@preview/1.0.1 on 18001
-Routing tcp:8001 -> 18001 as preview (add header `x-bisq-preview: 1.0.1`)
+Routing tcp:8001 -> 18001 as preview (add header `x-bisk-preview: 1.0.1`)
 ```
 
 Now you’ll see that the preview version is detected, and now running on 18001. When you make a call to the server with the header, it behaves differently.
@@ -207,7 +206,7 @@ Now you’ll see that the preview version is detected, and now running on 18001.
 ```bash
 $ curl http://localhost:8001/
 Hello, World!
-$ curl -H "x-bisq-preview: 1.0.1" http://localhost:8001/
+$ curl -H "x-bisk-preview: 1.0.1" http://localhost:8001/
 Hello, Preview!
 ```
 
@@ -218,7 +217,7 @@ Ah, isn’t this great.
 To change the log level, use `log_level` attribute in the config.
 
 ```bash
-bisqit_server_port: 8001
+bisket_server_port: 8001
 log_level: info
 ```
 
@@ -233,8 +232,8 @@ There are five levels of `log_level`:
 By default, it is set to warn. However, `info` would allow you to see per-request events.
 
 ```bash
-$ bisq server start
-Bisqit server running on 8001
+$ bisk server start
+Bisket server running on 8001
 ...
 Routing tcp:8001 -> 18001
 2024-01-01T12:34:56+0900 [INFO] a0fjem HTTP/1.0 connected from 127.0.0.1

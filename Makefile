@@ -1,4 +1,4 @@
-BINARY_NAME=bisq
+BINARY_NAME=bisk
 DIST_DIR=./dist
 ARCH_TYPE := $(shell uname -m)
 
@@ -8,7 +8,7 @@ all: test build
 
 build:
 	@echo "Building for $(ARCH_TYPE)"
-	@GO112MODULE=on go build -o $(DIST_DIR)/@$(ARCH_TYPE)/$(BINARY_NAME) ./cmd/bisq
+	@GO112MODULE=on go build -o $(DIST_DIR)/@$(ARCH_TYPE)/$(BINARY_NAME) ./cmd/bisk
 
 clean:
 	@echo "Cleaning"

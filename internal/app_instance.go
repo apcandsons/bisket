@@ -62,13 +62,13 @@ func (app *AppInstance) Start() error {
 	go func() {
 		app.RecordEvent(Running)
 		appStdWriter.Info(fmt.Sprintf("Running %v/%v on %v", app.Name, app.Version, app.Port))
-		appDir := fmt.Sprintf(".bisqit/%v/%v", app.Name, app.Version)
+		appDir := fmt.Sprintf(".bisket/%v/%v", app.Name, app.Version)
 
 		for _, line := range app.RunCommand {
 			appStdWriter.Debug(fmt.Sprintf("Running command: %v", line))
 			cmd := exec.Command("sh", "-c", line)
 			cmd.Dir = appDir
-			cmd.Env = append(cmd.Env, fmt.Sprintf("BISQIT_PORT=%s", app.Port))
+			cmd.Env = append(cmd.Env, fmt.Sprintf("BISKET_PORT=%s", app.Port))
 			cmd.Stdout = &appStdWriter
 			cmd.Stderr = &appErrWriter
 

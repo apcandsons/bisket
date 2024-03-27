@@ -11,12 +11,17 @@ import (
 type Repository struct {
 	AppName          string
 	RepoUrl          string
-	Vers             []string
-	PreviewVers      []string
+	Vers             []Version
+	PreviewVers      []Version
 	LatestVer        string
 	ApiKey           string
 	VersionUpdateFn  func(*Repository, *VersionUpdateEvent) error
 	VersionDestroyFn func(*Repository, *VersionDestroyEvent) error
+}
+
+type Version struct {
+	Tag           string
+	ExpectedState AppInstanceState
 }
 
 type VersionUpdateEvent struct {
@@ -57,7 +62,7 @@ func (repo *Repository) Init(config *RepoConfig) error {
 }
 
 func (repo *Repository) CloneOrPullVersion(version string) error {
-	destDir := fmt.Sprintf(".bisqit/%s/%s", repo.AppName, version)
+	destDir := fmt.Sprintf(".bisket/%s/%s", repo.AppName, version)
 	if _, err := os.Stat(destDir + "/.git"); err != nil {
 		slog.Info("Existing repository not found, cloning repository")
 		// git clone --depth 1 --branch <tag_name> <repo_url>
@@ -85,7 +90,7 @@ func (repo *Repository) CloneOrPullVersion(version string) error {
 
 func (repo *Repository) RefreshTags() error {
 	slog.Info("Fetching tags")
-	destDir := fmt.Sprintf(".bisqit/%s/main", repo.AppName)
+	destDir := fmt.Sprintf(".bisket/%s/main", repo.AppName)
 	cmd := exec.Command("git", "fetch", "--prune", "origin", "+refs/tags/*:refs/tags/*")
 	cmd.Dir = destDir
 	err := cmd.Run()
@@ -102,8 +107,8 @@ func (repo *Repository) RefreshTags() error {
 	}
 
 	// Erase the existing tags and preview tags
-	repo.Vers = []string{}
-	repo.PreviewVers = []string{}
+	repo.Vers = []Version{}
+	repo.PreviewVers = []Version{}
 
 	tags := strings.Split(string(out), "\n")
 	for _, tag := range tags {
@@ -112,21 +117,18 @@ func (repo *Repository) RefreshTags() error {
 			continue
 		}
 		if strings.HasPrefix(tag, "@preview/") {
-			repo.PreviewVers = append(repo.PreviewVers, tag)
+			slog.Info(fmt.Sprintf("Detected preview version: %s", tag))
+			repo.PreviewVers = append(repo.PreviewVers, Version{Tag: tag, ExpectedState: Running})
 			continue
 		}
-		repo.Vers = append(repo.Vers, tag)
+		slog.Info(fmt.Sprintf("Detected version: %s", tag))
+		repo.Vers = append(repo.Vers, Version{Tag: tag, ExpectedState: Stopped})
 	}
 
-	slog.Info("Found versions: " + strings.Join(repo.Vers, ", "))
-	slog.Info("Found preview versions: " + strings.Join(repo.PreviewVers, ", "))
-
 	latestVer := repo.Vers[len(repo.Vers)-1] // TODO: Naive implementation, should be sorted by version
-	if repo.LatestVer != latestVer {
-		slog.Info(fmt.Sprintf("Latest version has changed from %v to %v", repo.LatestVer, latestVer))
-		repo.LatestVer = latestVer
-		if repo.VersionUpdateFn != nil {
-			repo.VersionUpdateFn(repo, &VersionUpdateEvent{latestVer})
+	for _, ver := range repo.Vers {
+		if ver.Tag == latestVer.Tag {
+			ver.ExpectedState = Running
 		}
 	}
 	return nil

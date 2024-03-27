@@ -105,6 +105,7 @@ func (svr *Server) Start() error {
 	if err != nil {
 		return err
 	}
+	svr.RefreshAppInstances(svr.Repo.Vers, svr.Repo.PreviewVers)
 
 	ch := make(chan error, 2)
 	// Run the service server
@@ -148,4 +149,29 @@ func (svr *Server) startAdminServer(ch chan error) {
 		return
 	}
 	ch <- nil
+}
+
+func (svr *Server) RefreshAppInstances() {
+	// Iterate versions and preview versions
+	for _, ver := range svr.Repo.Vers {
+		for _, app := range svr.AppInstances {
+			if ver.ExpectedState != app.State {
+				switch ver.ExpectedState {
+				case Running:
+					err := app.Start()
+					if err != nil {
+						return
+					}
+					break
+				case Stopped:
+					app.Stop()
+					break
+				}
+			} else {
+				// Do nothing!
+			}
+		}
+	}
+
+	// Destroy any versions that
 }
