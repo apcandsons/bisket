@@ -28,8 +28,8 @@ type AppInstance struct {
 	Name       string
 	Version    string
 	Port       string
+	RepoUrl    string
 	State      AppInstanceState
-	Repo       *Repository
 	RunCommand []string
 	Channel    chan error
 	CurrCmd    *exec.Cmd
@@ -53,7 +53,7 @@ func (app *AppInstance) Start() error {
 
 	app.RecordEvent(Pulling)
 	appStdWriter.Info(fmt.Sprintf("Pulling version: %v", app.Version))
-	err := app.Repo.CloneOrPullVersion(app.Version)
+	err := CloneOrPullVersion(app.RepoUrl, app.Version)
 	if err != nil {
 		appErrWriter.Error(fmt.Sprintf("Error pulling version: %v", err))
 		return err
@@ -62,7 +62,7 @@ func (app *AppInstance) Start() error {
 	go func() {
 		app.RecordEvent(Running)
 		appStdWriter.Info(fmt.Sprintf("Running %v/%v on %v", app.Name, app.Version, app.Port))
-		appDir := fmt.Sprintf(".bisket/%v/%v", app.Name, app.Version)
+		appDir := fmt.Sprintf(".bisket/%v", app.Version)
 
 		for _, line := range app.RunCommand {
 			appStdWriter.Debug(fmt.Sprintf("Running command: %v", line))

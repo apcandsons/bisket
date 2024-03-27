@@ -43,10 +43,7 @@ var serverStartCmd = &cobra.Command{
 			log.Fatalf("Error reading config file: %v", err)
 		}
 
-		var repo = intl.Repository{}
-		var svr = intl.Server{}
-
-		svr.Init(&cfg, &repo)
+		var svr = intl.Server{Conf: cfg}
 		if err := svr.Start(); err != nil {
 			log.Fatalf("Error starting server: %v", err)
 		}

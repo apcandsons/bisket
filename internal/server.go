@@ -9,8 +9,8 @@ import (
 )
 
 type Server struct {
-	Repo            *Repository
-	Conf            *Config
+	Repo            Repository
+	Conf            Config
 	AppInstances    []*AppInstance
 	LastAppInstance *AppInstance
 }
@@ -23,11 +23,15 @@ func (h HttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.HttpHandler(w, r)
 }
 
-func (svr *Server) Init(cfg *Config, repo *Repository) {
-	svr.Repo = repo
-	svr.Conf = cfg
-	repo.OnVersionUpdate(svr.OnVersionUpdate)
-	repo.OnVersionDestroy(svr.OnVersionDestroy)
+func (svr *Server) initRepo() error {
+	svr.Repo = Repository{}
+	err := svr.Repo.Init(&svr.Conf.RepoConfig)
+	if err != nil {
+		return err
+	}
+	svr.Repo.OnVersionUpdate(svr.OnVersionUpdate)
+	svr.Repo.OnVersionDestroy(svr.OnVersionDestroy)
+	return nil
 }
 
 func (svr *Server) OnVersionUpdate(repo *Repository, event *VersionUpdateEvent) error {
@@ -66,7 +70,7 @@ func (svr *Server) CreateAppInstance(version string) (*AppInstance, error) {
 	var app = AppInstance{
 		Name:       svr.Repo.AppName,
 		Port:       strconv.Itoa(port),
-		Repo:       svr.Repo,
+		RepoUrl:    svr.Repo.RepoUrl,
 		Version:    version,
 		RunCommand: svr.Conf.RunCommand,
 	}
@@ -101,11 +105,11 @@ func getFreePort() (int, error) {
 }
 
 func (svr *Server) Start() error {
-	err := svr.Repo.Init(svr.Conf.RepoConfig)
-	if err != nil {
+	if err := svr.initRepo(); err != nil {
 		return err
 	}
-	svr.RefreshAppInstances(svr.Repo.Vers, svr.Repo.PreviewVers)
+
+	svr.refreshAppInstances()
 
 	ch := make(chan error, 2)
 	// Run the service server
@@ -151,27 +155,98 @@ func (svr *Server) startAdminServer(ch chan error) {
 	ch <- nil
 }
 
-func (svr *Server) RefreshAppInstances() {
-	// Iterate versions and preview versions
-	for _, ver := range svr.Repo.Vers {
-		for _, app := range svr.AppInstances {
-			if ver.ExpectedState != app.State {
-				switch ver.ExpectedState {
-				case Running:
-					err := app.Start()
-					if err != nil {
-						return
-					}
-					break
-				case Stopped:
-					app.Stop()
-					break
-				}
-			} else {
-				// Do nothing!
+type Action int
+
+const (
+	DoNothing Action = iota
+	CreateInstance
+	DestroyInstance
+)
+
+type AppInstanceAction struct {
+	Version      string
+	DesiredState AppInstanceState
+	CurrentState AppInstanceState
+	Action       Action
+}
+
+func (svr *Server) refreshAppInstances() {
+	actions := svr.analyzeActions()
+	for _, action := range *actions {
+		slog.Info(fmt.Sprintf("Version: %v, Desired state: %s, Current state: %s, Action: %s", action.Version, action.DesiredState, action.CurrentState, action.Action))
+		if action.Action == CreateInstance {
+			app, err := svr.CreateAppInstance(action.Version)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Error creating app instance: %v", err))
+				continue
+			}
+			svr.AppInstances = append(svr.AppInstances, app)
+		} else if action.Action == DestroyInstance {
+			app, err := svr.FindAppInstanceByVersion(action.Version)
+			if err == nil {
+				app.Stop()
+				svr.AppInstances = removeAppInstance(svr.AppInstances, app)
 			}
 		}
 	}
+}
 
-	// Destroy any versions that
+func removeAppInstance(instances []*AppInstance, app *AppInstance) []*AppInstance {
+	var newInstances = make([]*AppInstance, 0)
+	for _, instance := range instances {
+		if instance != app {
+			newInstances = append(newInstances, instance)
+		}
+	}
+	return newInstances
+}
+
+func (svr *Server) analyzeActions() *[]AppInstanceAction {
+	// First create a list of versions by iterating over the versions in the repository and the versions in the app instances
+	var versions = make([]string, 0)
+	for _, version := range svr.Repo.Vers {
+		versions = append(versions, version.Tag)
+	}
+	for _, app := range svr.AppInstances {
+		versions = append(versions, app.Version)
+	}
+
+	// Create actions needed to bring the app instances to the desired state
+	var actions = make([]AppInstanceAction, 0)
+	for _, version := range versions {
+		var action = AppInstanceAction{
+			Version:      version,
+			DesiredState: Stopped,
+			CurrentState: Stopped,
+			Action:       DoNothing,
+		}
+
+		if _, err := svr.Repo.FindVersionByTag(version); err == nil {
+			action.DesiredState = Running
+		}
+
+		if app, err := svr.FindAppInstanceByVersion(version); err == nil {
+			action.CurrentState = app.State
+		}
+
+		if action.CurrentState != action.DesiredState {
+			if action.DesiredState == Running {
+				action.Action = CreateInstance
+			} else {
+				action.Action = DestroyInstance
+			}
+		}
+		actions = append(actions, action)
+	}
+	return &actions
+}
+
+func (svr *Server) FindAppInstanceByVersion(version string) (*AppInstance, error) {
+	for _, app := range svr.AppInstances {
+		if app.Version == version {
+			return app, nil
+		}
+	}
+	return nil, fmt.Errorf("AppInstance not found")
+
 }

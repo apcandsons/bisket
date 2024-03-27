@@ -8,11 +8,11 @@ import (
 )
 
 type Config struct {
-	Port       string      `yaml:"port"`
-	AdminPort  string      `yaml:"admin_port"`
-	Preview    bool        `yaml:"preview"`
-	RunCommand []string    `yaml:"run"`
-	RepoConfig *RepoConfig `yaml:"repository"`
+	Port       string     `yaml:"port"`
+	AdminPort  string     `yaml:"admin_port"`
+	Preview    bool       `yaml:"preview"`
+	RunCommand []string   `yaml:"run"`
+	RepoConfig RepoConfig `yaml:"repository"`
 }
 
 type RepoConfig struct {
@@ -29,7 +29,7 @@ func (cfg *Config) Init() {
 	cfg.AdminPort = "18080"
 	cfg.Preview = false
 	cfg.RunCommand = []string{"go run dist/@$(uname -m)/server -p $BISKET_PORT"}
-	cfg.RepoConfig = &RepoConfig{
+	cfg.RepoConfig = RepoConfig{
 		Github: GithubConfig{
 			RepoUrl: "https://github.com/apcandsons/echo-app",
 			ApiKey:  "",

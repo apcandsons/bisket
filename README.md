@@ -1,14 +1,8 @@
 # bisket
 
-Tired of waiting for deployment? Let’s enjoy the ***blazing-fast deployment*** in a bitesize!!
-
-## Motivation
-
-Container technology is great, but the deploy experience is just horrible.
-
-Image creation is time-consuming, difficult to optimize, and lacks scalability. After it's available in the repository, it needs to be pulled, mounted, and then there's the additional overhead involved in running a new instance and updating traffic. This process consumes a significant amount of time for engineers daily. In my opinion, this technology is over-engineered, resulting in the wastage of substantial networking and computing resources every day.
-
-bisket is a lightweight application switcher, designed to be used in a critical applications where turnover speed matters. It provides a seamless way to switch between different applications versions without consuming your time, enhancing productivity while ensuring a reliable and smooth deployment experience.
+Bisket is a reverse proxy server that quickly switches versions when you push a new tag to your repository.
+It is designed to be used in a critical application where turnover speed matters. 
+It provides a seamless way to switch between different applications versions without consuming your time, enhancing productivity while ensuring a reliable and smooth deployment experience.
 
 ## tl;dr
 
@@ -27,13 +21,16 @@ $ bisk init
 This will create `bisket.yaml`, use your editor to modify however needed.
 
 ```yaml
-bisket_server_port: 8001
+port: "8080"
+admin_port: "18080"
+preview: false
 run:
-  - dist/server -p $BISKET_PORT
+  - echo @$(uname -m)
+  - dist/@$(uname -m)/server -p $BISKET_PORT
 repository:
-	git:
-	  repository: https://github.com/smithee/amazing_app
-		secret: <git-api-key>
+  github:
+    repo_url: https://github.com/apcandsons/echo-app
+    api_key: ""
 ```
 
 <aside>
@@ -44,8 +41,8 @@ You can actually run bisket server on your local device to test. So, just do thi
 
 ```bash
 $ bisk server start
-Bisket server running on 8001
-Reading https://github.com/smithee/amazing_app
+Bisket server running on 8080
+Reading https://github.com/apcandsons/echo-app
 Detected latest version: @1.0.0
 Pulling latest version: @1.0.0
 Running amazing_app@1.0.0 on 18000 # some arbitrary that's not in use
@@ -53,7 +50,7 @@ Ready to route amazing_app@1.0.0 on 18000
 Routing tcp:8001 -> 18000
 ```
 
-Test your app on [`http://localhost:8001`](http://localhost:8001) and see what happens!
+Test your app on [`http://localhost:8080`](http://localhost:8080) and see what happens!
 
 ## Update Version Instance
 
