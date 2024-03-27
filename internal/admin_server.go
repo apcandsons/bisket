@@ -46,6 +46,8 @@ func (a *AdminService) RefreshRepoTags(w http.ResponseWriter, r *http.Request) e
 	if err != nil {
 		return err
 	}
+	a.Server.refreshAppInstances()
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Tags refreshed"))
 	return nil

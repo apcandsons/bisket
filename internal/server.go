@@ -173,7 +173,7 @@ type AppInstanceAction struct {
 func (svr *Server) refreshAppInstances() {
 	actions := svr.analyzeActions()
 	for _, action := range *actions {
-		slog.Info(fmt.Sprintf("Version: %v, Desired state: %s, Current state: %s, Action: %s", action.Version, action.DesiredState, action.CurrentState, action.Action))
+		slog.Info(fmt.Sprintf("Version: %s", action.Version))
 		if action.Action == CreateInstance {
 			app, err := svr.CreateAppInstance(action.Version)
 			if err != nil {
